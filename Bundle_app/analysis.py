@@ -154,15 +154,15 @@ def count_per_cel(img, bundle_mask):
 
 
 
-def analyze_folder(folder):    #creating the pandas df and exporting it as a csv
+def analyze_folder(folder, progress=None):    #creating the pandas df and exporting it as a csv
+    #added a progress bar for QOL
     rows = []
-    img_paths = sorted(Path(folder).rglob("*.png"))
+    all_paths = sorted(Path(folder).rglob("*.png"))
 
-    for path in img_paths:
-        if "__MACOSX" in path.parts:
-            continue
-        elif path.name.startswith("._"):
-            continue
+    #MAC makes weird files that arent the images i want so this excludes them
+    img_paths = [p for p in all_paths if not ("__MACOSX" in p.parts or p.name.startswith("._"))]
+
+    for i, path in enumerate(img_paths):
         try:
             img = io.imread(str(path), as_gray= True)
             cleaned = clean(img)
@@ -181,6 +181,8 @@ def analyze_folder(folder):    #creating the pandas df and exporting it as a csv
 
         rows.append(row)
         print(f"done: {path.name}")
+        if progress is not None:
+            progress(i+1, len(img_paths))
 
     df = pd.DataFrame(rows)
     df["flagged"] = False
